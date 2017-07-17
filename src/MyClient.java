@@ -180,6 +180,7 @@ public class MyClient { //} implements Callable<Void> {
                 shortenedPath.add(lastAdded);
             }
         }
+        shortenedPath.add(path.get(path.size() - 1));
 
         return shortenedPath;
     }
@@ -189,30 +190,20 @@ public class MyClient { //} implements Callable<Void> {
         if (botVertex == null) {
             moveRandom(botNr);
         } else {
-            float x, y;
-            if (v.x - botVertex.x == 0) {
-                x = 0;
-            } else if (v.x - botVertex.x < 0) {
-                x = (float) Math.max(-1, v.x - botVertex.x);
-            } else {
-                x = (float) Math.min(1, v.x - botVertex.x);
-            }
-        /*if (botVertex.y - v.y == 0) {
-            y = 0;
-        } else if (botVertex.y - v.y < 0) {
-            y = (float) Math.max(-1, botVertex.y - v.y);
-        } else {
-            y = (float) Math.min(1, botVertex.y - v.y);
-        }*/
-            if (v.y - botVertex.y == 0) {
-                y = 0;
-            } else if (v.y - botVertex.y < 0) {
-                y = (float) Math.max(-1, v.y - botVertex.y);
-            } else {
-                y = (float) Math.min(1, v.y - botVertex.y);
-            }
+            float x = getMovementValue(v.x, botVertex.x);
+            float y = getMovementValue(v.y, botVertex.y);
             networkClient.setMoveDirection(botNr, x, y);
-            System.out.println("move to x= " + x + " y= " + y);
+            //System.out.println("move to x= " + x + " y= " + y);
+        }
+    }
+
+    private float getMovementValue(int value1, int value2) {
+        if (value1 - value2 == 0) {
+            return  0;
+        } else if (value1 - value2 < 0) {
+            return  (float) Math.max(-1, value1 - value2);
+        } else {
+            return  (float) Math.min(1, value1 - value2);
         }
     }
 
