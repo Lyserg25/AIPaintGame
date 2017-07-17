@@ -66,28 +66,42 @@ public class MyClient { //} implements Callable<Void> {
         ColorChange colorChange;
         boolean firstColorChange = false;
 
-        while (!firstColorChange) {
+        //while (!firstColorChange) {
+        while (botPositions[myPlayerNr][0] == null || botPositions[myPlayerNr][1] == null || botPositions[myPlayerNr][2] == null) {
             networkClient.setMoveDirection(0, random.nextFloat() * 2 - 1, random.nextFloat() * 2 - 1);
             networkClient.setMoveDirection(1, random.nextFloat() * 2 - 1, random.nextFloat() * 2 - 1);
             networkClient.setMoveDirection(2, random.nextFloat() * 2 - 1, random.nextFloat() * 2 - 1);
-            if (networkClient.pullNextColorChange() != null) firstColorChange = true;
+            if ((colorChange = networkClient.pullNextColorChange()) != null) { //firstColorChange = true;
+                botPositions[colorChange.player][colorChange.bot] = new Position(colorChange.x, colorChange.y);
+            }
         }
+        /*Thread t = new Thread(new AdjustBotPositions(networkClient));
+        t.start();*/
 
+        Timer slowDownTimer = new Timer();
+        slowDownTimer.schedule(new TimerTask() {
+            @Override
+            public void run() {
+                networkClient.setMoveDirection(0, 0,0);
+                networkClient.setMoveDirection(1,  0,0);
+            }
+        }, 5, 5);
+
+        System.out.print("ok");
         while (true) {
-            networkClient.setMoveDirection(0, random.nextFloat() * 2 - 1, random.nextFloat() * 2 - 1);
-            networkClient.setMoveDirection(1, random.nextFloat() * 2 - 1, random.nextFloat() * 2 - 1);
+//            networkClient.setMoveDirection(0, random.nextFloat() * 2 - 1, random.nextFloat() * 2 - 1);
+            //networkClient.setMoveDirection(1, random.nextFloat() * 2 - 1, random.nextFloat() * 2 - 1);
 
-            if (botPositions[myPlayerNr][0] != null && botPositions[myPlayerNr][1] != null && botPositions[myPlayerNr][2] != null) {
+            for (int botNr = 0; botNr < 3; botNr++) {
 
-                int botNr = 2;
                 if (botPaths.get(botNr) == null || isAtVertex(botNr, botDestinations[botNr])) {
-                    Vertex v = vertexArray[30][15] == null ? vertexArray[30][15] : vertexArray[25][20]; //TODO: calculate actual destination for bots
+                    Vertex v = getNextDestination(botNr);
                     botPaths.put(botNr, getPathToVertex(botNr, v));
                 }
                 if (botPaths.get(botNr) != null && isAtVertex(botNr, botPaths.get(botNr).get(0))) {
                     botPaths.get(botNr).remove(0);
                     if (botPaths.get(botNr).isEmpty()) {
-                        Vertex v = vertexArray[30][15] == null ? vertexArray[30][15] : vertexArray[25][20]; //TODO: calculate actual destination for bots
+                        Vertex v = getNextDestination(botNr);
                         botPaths.put(botNr, getPathToVertex(botNr, v));
                     }
                     moveToVertex(botNr, botPaths.get(botNr).get(0));
@@ -104,6 +118,16 @@ public class MyClient { //} implements Callable<Void> {
             //System.out.println("stop");
         }
         //return null;
+    }
+
+    private Vertex getNextDestination(int botNr) {
+        for (int x = 20; x < 40; x++) {
+            if (vertexArray[x][15] != null) return vertexArray[x][15];
+        }
+        for (int x = 20; x < 40; x++) {
+            if (vertexArray[x][30] != null) return vertexArray[x][30];
+        }
+        return vertexArray[25][40];
     }
 
     private boolean isAtVertex(int botNr, Vertex v) {
@@ -135,8 +159,7 @@ public class MyClient { //} implements Callable<Void> {
 
     private List<Vertex> getPathToVertex(int botNr, Vertex destination) {
         AStar aStar = new AStar();
-        Position botPosition = botPositions[myPlayerNr][botNr];
-        Vertex start = vertexArray[botPosition.x / BLOCK_SIZE][botPosition.y / BLOCK_SIZE];
+        Vertex start = getBotVertex(botNr);
         return aStar.getShortestPath(graph, start, destination);
     }
 
@@ -177,7 +200,7 @@ public class MyClient { //} implements Callable<Void> {
         for (int y = 0; y < vertexArray.length; y++) {
             for (int x = 0; x < vertexArray.length; x++) {
                 if (x < vertexArray.length - 1 && vertexArray[x][y] != null && vertexArray[x + 1][y] != null) {
-                    graph.addEdge(vertexArray[x][y],vertexArray[x + 1][y]);
+                    graph.addEdge(vertexArray[x][y], vertexArray[x + 1][y]);
                 }
                 if (y < vertexArray.length - 1 && vertexArray[x][y] != null && vertexArray[x][y + 1] != null) {
                     graph.addEdge(vertexArray[x][y], vertexArray[x][y + 1]);
@@ -248,4 +271,22 @@ public class MyClient { //} implements Callable<Void> {
             return this.x == v.x && this.y == v.y;
         }
     }
+
+    /*private class AdjustBotPositions implements Runnable {
+
+        private NetworkClient networkClient;
+
+        public AdjustBotPositions(NetworkClient networkClient) {
+            this.networkClient = networkClient;
+        }
+
+        public void run() {
+            ColorChange colorChange;
+            while (true) {
+                while ((colorChange = networkClient.pullNextColorChange()) != null) {
+                    botPositions[colorChange.player][colorChange.bot] = new Position(colorChange.x, colorChange.y);
+                }
+            }
+        }
+    }*/
 }
