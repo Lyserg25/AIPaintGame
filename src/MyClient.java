@@ -160,7 +160,28 @@ public class MyClient { //} implements Callable<Void> {
     private List<Vertex> getPathToVertex(int botNr, Vertex destination) {
         AStar aStar = new AStar();
         Vertex start = getBotVertex(botNr);
-        return aStar.getShortestPath(graph, start, destination);
+        List<Vertex> path = aStar.getShortestPath(graph, start, destination);
+        return removeIntermediateVertices(path);
+    }
+
+    private List<Vertex> removeIntermediateVertices(List<Vertex> path) {
+        if (path == null || path.size() < 3) {
+            return path;
+        }
+
+        List<Vertex> shortenedPath = new ArrayList<>();
+        Vertex lastAdded = path.get(0);
+        shortenedPath.add(lastAdded);
+
+        for (int i = 1; i < path.size(); i++) {
+            Vertex v = path.get(i);
+            if (v.x != lastAdded.x && v.y != lastAdded.y) {
+                lastAdded = path.get(i - 1);
+                shortenedPath.add(lastAdded);
+            }
+        }
+
+        return shortenedPath;
     }
 
     private void moveToVertex(int botNr, Vertex v) {
