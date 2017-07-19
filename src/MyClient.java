@@ -65,9 +65,7 @@ public class MyClient { //} implements Callable<Void> {
 //
         Random random = new Random();
         ColorChange colorChange;
-        boolean firstColorChange = false;
 
-        //while (!firstColorChange) {
         while (botPositions[myPlayerNr][0] == null || botPositions[myPlayerNr][1] == null || botPositions[myPlayerNr][2] == null) {
             networkClient.setMoveDirection(0, random.nextFloat() * 2 - 1, random.nextFloat() * 2 - 1);
             networkClient.setMoveDirection(1, random.nextFloat() * 2 - 1, random.nextFloat() * 2 - 1);
@@ -88,16 +86,13 @@ public class MyClient { //} implements Callable<Void> {
 //            }
 //        }, 5, 5);
 
-        System.out.print("ok");
         while (true) {
-//            networkClient.setMoveDirection(0, random.nextFloat() * 2 - 1, random.nextFloat() * 2 - 1);
-            //networkClient.setMoveDirection(1, random.nextFloat() * 2 - 1, random.nextFloat() * 2 - 1);
-
             for (int botNr = 0; botNr < 3; botNr++) {
 
                 if (botVertices[myPlayerNr][botNr] == null) {
                     networkClient.setMoveDirection(botNr, random.nextFloat() * 2 - 1, random.nextFloat() * 2 - 1);
                 } else {
+                    //TODO refactor this ->
                     if (botPaths.get(botNr) == null || isAtVertex(botNr, botDestinations[botNr])) {
                         Vertex v = getNextDestination(botNr);
                         botPaths.put(botNr, getPathToVertex(botNr, v));
@@ -112,7 +107,6 @@ public class MyClient { //} implements Callable<Void> {
                     } else if (botPaths.get(botNr) != null && !isAtVertex(botNr, botPaths.get(botNr).get(0))) {
                         Position botPos = botPositions[myPlayerNr][botNr];
                         if (vertexArray[botPos.x / BLOCK_SIZE][botPos.y / BLOCK_SIZE] == null) {
-//                            moveToVertex(botNr, botVertices[myPlayerNr][botNr]);
                             networkClient.setMoveDirection(botNr, random.nextFloat() * 2 - 1, random.nextFloat() * 2 - 1);
                         } else {
                             moveToVertex(botNr, botPaths.get(botNr).get(0));
@@ -124,10 +118,7 @@ public class MyClient { //} implements Callable<Void> {
             while ((colorChange = networkClient.pullNextColorChange()) != null) {
                 setBotPosition(colorChange);
             }
-
-            //System.out.println("stop");
         }
-        //return null;
     }
 
     private Vertex getNextDestination(int botNr) {
@@ -141,36 +132,22 @@ public class MyClient { //} implements Callable<Void> {
     }
 
     private boolean isAtVertex(int botNr, Vertex v) {
-//        if (botPositions[myPlayerNr][botNr] == null) {
-//            return false;
-//        }
-        Vertex botVertex = botVertices[myPlayerNr][botNr];
-
-        if (botVertex == null) {
-            moveRandom(botNr);
-            System.out.println("botVertex null");
+        if (v == null) {
+            return false;
         }
 
-        if (botVertex != null && botVertex.equals(v)) {
+        Vertex botVertex = botVertices[myPlayerNr][botNr];
+        if (botVertex.equals(v)) {
+            return true;
+        }
+        if (graph.getNeighbours(v).containsKey(botVertex)) {
             return true;
         }
         return false;
     }
 
-    private void moveRandom(int botNr) {
-        Random random = new Random();
-        networkClient.setMoveDirection(botNr, random.nextFloat() * 2 - 1, random.nextFloat() * 2 - 1);
-        System.out.println("botVertex null");
-    }
-
-    private Vertex getBotVertex(int botNr) {
-        Position botPos = botPositions[myPlayerNr][botNr];
-        return vertexArray[botPos.x / BLOCK_SIZE][botPos.y / BLOCK_SIZE];
-    }
-
     private List<Vertex> getPathToVertex(int botNr, Vertex destination) {
         AStar aStar = new AStar();
-//        Vertex start = getBotVertex(botNr);
         Vertex start = botVertices[myPlayerNr][botNr];
         List<Vertex> path = aStar.getShortestPath(graph, start, destination);
         return removeIntermediateVertices(path);
@@ -198,17 +175,10 @@ public class MyClient { //} implements Callable<Void> {
     }
 
     private void moveToVertex(int botNr, Vertex v) {
-//        Vertex botVertex = getBotVertex(botNr);
         Vertex botVertex = botVertices[myPlayerNr][botNr];
-        if (botVertex == null) {
-            moveRandom(botNr);
-            System.out.println("botVertex null");
-        } else {
-            float x = getMovementValue(v.x, botVertex.x);
-            float y = getMovementValue(v.y, botVertex.y);
-            networkClient.setMoveDirection(botNr, x, y);
-            //System.out.println("move to x= " + x + " y= " + y);
-        }
+        float x = getMovementValue(v.x, botVertex.x);
+        float y = getMovementValue(v.y, botVertex.y);
+        networkClient.setMoveDirection(botNr, x, y);
     }
 
     private float getMovementValue(int value1, int value2) {
