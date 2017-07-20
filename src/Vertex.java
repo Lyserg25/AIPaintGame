@@ -7,10 +7,12 @@ public class Vertex {
     public int x;
     public int y;
     private Color averageColor;
+    private double score;
 
     public Vertex(int x, int y) {
         this.x = x;
         this.y = y;
+        this.score = 0.0;
     }
 
     @Override
@@ -32,4 +34,14 @@ public class Vertex {
     public Color getAverageColor() {
         return averageColor;
     }
+
+    public void setScore(double score) {
+        this.score = score;
+    }
+
+    public double getScore() {
+        return score;
+    }
+
+
 }

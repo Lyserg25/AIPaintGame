@@ -32,7 +32,7 @@ public class Graph<Vertex> {
     }
 
     public Double getWeight(Vertex v1, Vertex v2) {
-        return graph.get(v1).get(v1);
+        return graph.get(v1).get(v2);
     }
 
     public Map<Vertex, Double> getNeighbours(Vertex v) {
@@ -43,8 +43,9 @@ public class Graph<Vertex> {
         return Collections.unmodifiableMap(graph);
     }
 
-    public Set<Vertex> getVertices() {
-        return Collections.unmodifiableSet(vertices);
+    public List<Vertex> getVertices() {
+        List<Vertex> vertexList = new ArrayList<>(vertices);
+        return vertexList;
     }
-
 }
+

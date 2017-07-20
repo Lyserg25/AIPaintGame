@@ -155,7 +155,7 @@ public class MyClient { //} implements Callable<Void> {
         if (botNr == 0) {
             Set<Vertex> neighboursNeighbours = new HashSet<>();
             for (Object vertex : graph.getNeighbours(v).keySet()) {
-                neighboursNeighbours.addAll((Set<Vertex>) graph.getNeighbours(((Vertex) vertex)).keySet());
+                neighboursNeighbours.addAll(graph.getNeighbours(vertex).keySet());
             }
             if (neighboursNeighbours.contains(botVertex)) {
                 return true;
@@ -348,7 +348,10 @@ public class MyClient { //} implements Callable<Void> {
         }
 
         private List<Vertex> getBestLocations(QuadTreeNode quadTree) {
-            return null;
+            List<Vertex> vertices = graph.getVertices();
+            Collections.sort(vertices, new VertexComparator());
+
+            return vertices;
         }
 
         private void setVertexColors() {
