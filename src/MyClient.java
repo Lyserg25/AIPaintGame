@@ -10,7 +10,7 @@ import java.util.*;
 public class MyClient { //} implements Callable<Void> {
 
     private static final int FIELD_SIZE = 1024;
-    private static final int BLOCK_SIZE = 20;
+    private static final int BLOCK_SIZE = 16;
     private String hostName;
     private String teamName;
     private int myPlayerNr;
@@ -63,7 +63,7 @@ public class MyClient { //} implements Callable<Void> {
 //
 
         Timer botDestinationTimer = new Timer();
-        botDestinationTimer.schedule(new CalcBotDestinations(), 0, 1000);
+        botDestinationTimer.schedule(new CalcBotDestinations(), 2000, 2000);
 
         Random random = new Random();
         ColorChange colorChange;
@@ -94,8 +94,8 @@ public class MyClient { //} implements Callable<Void> {
 //        }, 5, 5);
 
         while (true) {
-            for (int botNr = 0; botNr < 3; botNr++) {
 
+            for (int botNr = 0; botNr < 3; botNr++) {
                 if (botVertices[myPlayerNr][botNr] == null) {
                     networkClient.setMoveDirection(botNr, random.nextFloat() * 2 - 1, random.nextFloat() * 2 - 1);
                 } else {
@@ -150,6 +150,15 @@ public class MyClient { //} implements Callable<Void> {
         if (graph.getNeighbours(v).containsKey(botVertex)) {
             return true;
         }
+        if (botNr == 0) {
+            Set<Vertex> neighboursNeighbours = new HashSet<>();
+            for (Object vertex : graph.getNeighbours(v).keySet()) {
+                neighboursNeighbours.addAll((Set<Vertex>) graph.getNeighbours(((Vertex) vertex)).keySet());
+            }
+            if (neighboursNeighbours.contains(botVertex)) {
+                return true;
+            }
+        }
         return false;
     }
 
@@ -186,6 +195,16 @@ public class MyClient { //} implements Callable<Void> {
         float x = getMovementValue(v.x, botVertex.x);
         float y = getMovementValue(v.y, botVertex.y);
         networkClient.setMoveDirection(botNr, x, y);
+
+//        if (botNr == 0) {
+//            Timer slowDownTimer = new Timer();
+//            slowDownTimer.schedule(new TimerTask() {
+//                @Override
+//                public void run() {
+//                    networkClient.setMoveDirection(0, 0, 0);
+//                }
+//            }, 4);
+//        }
     }
 
     private float getMovementValue(int value1, int value2) {
@@ -315,8 +334,13 @@ public class MyClient { //} implements Callable<Void> {
                 }
             }
             QuadTreeNode quadTree = new QuadTreeNode(field, 0, 0, FIELD_SIZE, FIELD_SIZE);
+            getBestLocations(quadTree);
 
             System.out.println(System.currentTimeMillis() - start);
+        }
+
+        private List<Vertex> getBestLocations(QuadTreeNode quadTree) {
+            return null;
         }
     }
 }

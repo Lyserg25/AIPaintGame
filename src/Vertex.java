@@ -21,4 +21,5 @@ public class Vertex {
         final Vertex v = (Vertex) o;
         return this.x == v.x && this.y == v.y;
     }
+
 }
