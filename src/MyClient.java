@@ -1,7 +1,9 @@
 import lenz.htw.kipifub.ColorChange;
 import lenz.htw.kipifub.net.NetworkClient;
 
+import java.awt.*;
 import java.util.*;
+import java.util.List;
 
 
 /**
@@ -281,6 +283,7 @@ public class MyClient { //} implements Callable<Void> {
         }
     }
 
+
     private class Position {
         public final int x;
         public final int y;
@@ -323,17 +326,22 @@ public class MyClient { //} implements Callable<Void> {
 
     private class CalcBotDestinations extends TimerTask {
 
+        private int[][] vertexColorField;
+
         @Override
         public void run() {
             long start = System.currentTimeMillis();
-            int[][] field = new int[FIELD_SIZE][FIELD_SIZE];
+//            int[][] field = new int[FIELD_SIZE][FIELD_SIZE];
+//
+//            for (int y = 0; y < FIELD_SIZE; y++) {
+//                for (int x = 0; x < FIELD_SIZE; x++) {
+//                    field[x][y] = networkClient.getBoard(x, y);
+//                }
+//            }
+            //QuadTreeNode quadTree = new QuadTreeNode(field, 0, 0, FIELD_SIZE, FIELD_SIZE);
 
-            for (int y = 0; y < FIELD_SIZE; y++) {
-                for (int x = 0; x < FIELD_SIZE; x++) {
-                    field[x][y] = networkClient.getBoard(x, y);
-                }
-            }
-            QuadTreeNode quadTree = new QuadTreeNode(field, 0, 0, FIELD_SIZE, FIELD_SIZE);
+            setVertexColors();
+            QuadTreeNode quadTree = new QuadTreeNode(vertexColorField, 0, 0, vertexColorField.length, vertexColorField.length);
             getBestLocations(quadTree);
 
             System.out.println(System.currentTimeMillis() - start);
@@ -342,5 +350,54 @@ public class MyClient { //} implements Callable<Void> {
         private List<Vertex> getBestLocations(QuadTreeNode quadTree) {
             return null;
         }
+
+        private void setVertexColors() {
+            vertexColorField = new int[FIELD_SIZE / BLOCK_SIZE][FIELD_SIZE / BLOCK_SIZE];
+            Color averageColor;
+            int xFrom, yFrom, xTo, yTo;
+            int x = 0;
+            int y = 0;
+
+            for (yFrom = 0; yFrom < FIELD_SIZE; yFrom = yTo + 1, y++, x = 0) {
+                yTo = yFrom + BLOCK_SIZE - 1;
+
+                if (yTo >= FIELD_SIZE) {
+                    yTo = FIELD_SIZE - 1;
+                }
+
+                for (xFrom = 0; xFrom < FIELD_SIZE; xFrom = xTo + 1, x++) {
+                    xTo = xFrom + BLOCK_SIZE - 1;
+
+                    if (xTo >= FIELD_SIZE) {
+                        xTo = FIELD_SIZE - 1;
+                    }
+
+                    if (vertexArray[x][y] == null) {
+                        averageColor = Color.BLACK;
+                    } else {
+                        averageColor = getAverageColor(xFrom, yFrom, xTo, yTo);
+                        vertexArray[x][y].setAverageColor(averageColor);
+                    }
+                    vertexColorField[x][y] = averageColor.getRGB();
+                }
+            }
+        }
+
+        private Color getAverageColor(int xFrom, int yFrom, int xTo, int yTo) {
+            int red = 0;
+            int green = 0;
+            int blue = 0;
+            for (int y = yFrom; y < yTo; y++) {
+                for (int x = xFrom; x < xTo; x++) {
+                    int rgb = networkClient.getBoard(x, y);
+                    red += (rgb >> 16) & 255;
+                    green += (rgb >> 8) & 255;
+                    blue += rgb & 255;
+                }
+            }
+            int size = BLOCK_SIZE * BLOCK_SIZE;
+            return new Color(red / size, green / size, blue / size);
+        }
+
     }
 }

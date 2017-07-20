@@ -1,9 +1,12 @@
+import java.awt.*;
+
 /**
  * Created by Maximilian on 11.07.2017.
  */
 public class Vertex {
     public int x;
     public int y;
+    private Color averageColor;
 
     public Vertex(int x, int y) {
         this.x = x;
@@ -22,4 +25,11 @@ public class Vertex {
         return this.x == v.x && this.y == v.y;
     }
 
+    public void setAverageColor(Color averageColor) {
+        this.averageColor = averageColor;
+    }
+
+    public Color getAverageColor() {
+        return averageColor;
+    }
 }
