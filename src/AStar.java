@@ -31,6 +31,7 @@ public class AStar {
     }
 
     private void initAStar(Graph<Vertex> graph, Vertex start, Vertex destination) {
+        //TODO: refactoring
         this.graph = graph;
         this.destination = destination;
         this.openList = new PriorityQueue<>(new FScoreComparator());

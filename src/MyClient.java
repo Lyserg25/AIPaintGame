@@ -20,7 +20,6 @@ public class MyClient { //} implements Callable<Void> {
     private Graph graph;
     private Vertex[][] vertexArray;
     private Vertex[] botDestinations;
-    private Vertex[] nextBotStopover;
     private Map<Integer, List<Vertex>> botPaths;
 
     /*public MyClient(String hostname, String teamName) {
@@ -40,7 +39,6 @@ public class MyClient { //} implements Callable<Void> {
         botPositions = new Position[3][3];
         botVertices = new Vertex[3][3];
         botDestinations = new Vertex[3];
-        nextBotStopover = new Vertex[3];
         botPaths = new HashMap<>();
 
         vertexArray = initVertexArray();
@@ -63,6 +61,10 @@ public class MyClient { //} implements Callable<Void> {
 //        networkClient.setMoveDirection(0, 1, 0); // bot 0 nach rechts
 //        networkClient.setMoveDirection(1, 0.23f, -0.52f); // bot 1 nach rechts unten
 //
+
+        Timer botDestinationTimer = new Timer();
+        botDestinationTimer.schedule(new CalcBotDestinations(), 0, 1000);
+
         Random random = new Random();
         ColorChange colorChange;
 
@@ -74,8 +76,13 @@ public class MyClient { //} implements Callable<Void> {
                 setBotPosition(colorChange);
             }
         }
-        /*Thread t = new Thread(new AdjustBotPositions(networkClient));
+
+
+
+
+        /*Thread t = new Thread(new calcBotDestinations(networkClient));
         t.start();*/
+
 
 //        Timer slowDownTimer = new Timer();
 //        slowDownTimer.schedule(new TimerTask() {
@@ -277,21 +284,39 @@ public class MyClient { //} implements Callable<Void> {
         }
     }
 
-    /*private class AdjustBotPositions implements Runnable {
+//    private class calcBotDestinations implements Runnable {
+//
+//        private NetworkClient networkClient;
+//
+//        public calcBotDestinations(NetworkClient networkClient) {
+//            this.networkClient = networkClient;
+//        }
+//
+//        public void run() {
+//            ColorChange colorChange;
+//            while (true) {
+//                while ((colorChange = networkClient.pullNextColorChange()) != null) {
+//                    botPositions[colorChange.player][colorChange.bot] = new Position(colorChange.x, colorChange.y);
+//                }
+//            }
+//        }
+//    }
 
-        private NetworkClient networkClient;
+    private class CalcBotDestinations extends TimerTask {
 
-        public AdjustBotPositions(NetworkClient networkClient) {
-            this.networkClient = networkClient;
-        }
-
+        @Override
         public void run() {
-            ColorChange colorChange;
-            while (true) {
-                while ((colorChange = networkClient.pullNextColorChange()) != null) {
-                    botPositions[colorChange.player][colorChange.bot] = new Position(colorChange.x, colorChange.y);
+            long start = System.currentTimeMillis();
+            int[][] field = new int[FIELD_SIZE][FIELD_SIZE];
+
+            for (int y = 0; y < FIELD_SIZE; y++) {
+                for (int x = 0; x < FIELD_SIZE; x++) {
+                    field[x][y] = networkClient.getBoard(x, y);
                 }
             }
+            QuadTreeNode quadTree = new QuadTreeNode(field, 0, 0, FIELD_SIZE, FIELD_SIZE);
+
+            System.out.println(System.currentTimeMillis() - start);
         }
-    }*/
+    }
 }
