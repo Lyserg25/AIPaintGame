@@ -46,7 +46,6 @@ public class MyClient { //} implements Callable<Void> {
         vertexArray = initVertexArray();
         graph = initGraph(vertexArray);
 
-
         //networkClient.setMoveDirection(2, 1, 0);
 
 //        int rgb = networkClient.getBoard(x, y); // 0-1023 ->
@@ -64,9 +63,6 @@ public class MyClient { //} implements Callable<Void> {
 //        networkClient.setMoveDirection(1, 0.23f, -0.52f); // bot 1 nach rechts unten
 //
 
-        Timer botDestinationTimer = new Timer();
-        botDestinationTimer.schedule(new CalcBotDestinations(), 2000, 2000);
-
         Random random = new Random();
         ColorChange colorChange;
 
@@ -79,7 +75,8 @@ public class MyClient { //} implements Callable<Void> {
             }
         }
 
-
+        Timer botDestinationTimer = new Timer();
+        botDestinationTimer.schedule(new CalcBotDestinations(), 2000, 2000);
 
 
         /*Thread t = new Thread(new calcBotDestinations(networkClient));
@@ -327,6 +324,9 @@ public class MyClient { //} implements Callable<Void> {
     private class CalcBotDestinations extends TimerTask {
 
         private int[][] vertexColorField;
+        private List<Vertex> enemyVertices;
+        private List<Vertex> enemyNeighbourVertices;
+        private List<Vertex> enemyNeighbourNeighbourVertices;
 
         @Override
         public void run() {
@@ -341,16 +341,53 @@ public class MyClient { //} implements Callable<Void> {
             //QuadTreeNode quadTree = new QuadTreeNode(field, 0, 0, FIELD_SIZE, FIELD_SIZE);
 
             setVertexColors();
-            QuadTreeNode quadTree = new QuadTreeNode(vertexColorField, 0, 0, vertexColorField.length, vertexColorField.length);
-            getBestLocations(quadTree);
+            getEnemyVertices();
+            setVertexScores();
+            //QuadTreeNode quadTree = new QuadTreeNode(vertexColorField, 0, 0, vertexColorField.length, vertexColorField.length);
+            getBestLocations();
 
             System.out.println(System.currentTimeMillis() - start);
         }
 
-        private List<Vertex> getBestLocations(QuadTreeNode quadTree) {
+        private void setVertexScores() {
+            Vertex v;
+            double score;
+            for (int y = 0; y < vertexArray.length; y++) {
+                for (int x = 0; x < vertexArray.length; x++) {
+                    v = vertexArray[x][y];
+                    if (v == null) {
+                    } else if (enemyVertices.contains(v)) {
+                        v.setScore(10);
+                    } else {
+                        if (myPlayerNr == 0) {
+                            score = 1 - v.getAverageColor().getRed() / 765.0;       //percentage enemy color
+                        } else if (myPlayerNr == 1) {
+                            score = 1 - v.getAverageColor().getGreen() / 765.0;
+                        } else {
+                            score = 1 - v.getAverageColor().getBlue() / 765.0;
+                        }
+                        for (Vertex enemyNeighbourVertex : enemyNeighbourVertices) {
+                            if (v.equals(enemyNeighbourVertex)) {
+                                score = score * 0.5;
+                            }
+                        }
+                        for (Vertex enemyNeighbourNeighbourVertex : enemyNeighbourNeighbourVertices) {
+                            if (v.equals(enemyNeighbourNeighbourVertex)) {
+                                score = score * 0.75;
+                            }
+                        }
+                        score = (1 - score) * 10;
+                        v.setScore(score);
+
+                        //System.out.println("y=" + v.x + " x =" + v.y + " score=" + score);
+                    }
+                }
+            }
+        }
+
+        private List<Vertex> getBestLocations() {
             List<Vertex> vertices = graph.getVertices();
             Collections.sort(vertices, new VertexComparator());
-
             return vertices;
         }
 
@@ -381,6 +418,8 @@ public class MyClient { //} implements Callable<Void> {
                         averageColor = getAverageColor(xFrom, yFrom, xTo, yTo);
                         vertexArray[x][y].setAverageColor(averageColor);
                     }
+
+                    //noch nötig??
                     vertexColorField[x][y] = averageColor.getRGB();
                 }
             }
@@ -402,5 +441,23 @@ public class MyClient { //} implements Callable<Void> {
             return new Color(red / size, green / size, blue / size);
         }
 
+        private void getEnemyVertices() {
+            enemyVertices = new ArrayList<>();
+            enemyNeighbourVertices = new ArrayList<>();
+            enemyNeighbourNeighbourVertices = new ArrayList<>();
+            for (int j = 0; j < 3; j++) {
+                for (int i = 0; i < 3; i++) {
+                    if (j != myPlayerNr && botVertices[j][i] != null) {
+                        Vertex v = botVertices[j][i];
+                        enemyVertices.add(v);
+                        enemyNeighbourVertices.addAll(graph.getNeighbours(v).keySet());
+
+                        for (Object vertex : graph.getNeighbours(v).keySet()) {
+                            enemyNeighbourNeighbourVertices.addAll(graph.getNeighbours(vertex).keySet());
+                        }
+                    }
+                }
+            }
+        }
     }
 }
