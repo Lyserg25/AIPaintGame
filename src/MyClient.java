@@ -4,13 +4,14 @@ import lenz.htw.kipifub.net.NetworkClient;
 import java.awt.*;
 import java.util.*;
 import java.util.List;
-import java.util.concurrent.SynchronousQueue;
+import java.util.Queue;
+import java.util.concurrent.Callable;
 
 
 /**
  * Created by Maximilian on 04.07.2017.
  */
-public class MyClient { //} implements Callable<Void> {
+public class MyClient implements Callable<Void> {
 
     private static final int FIELD_SIZE = 1024;
     private static final int BLOCK_SIZE = 16;
@@ -22,50 +23,25 @@ public class MyClient { //} implements Callable<Void> {
     private NetworkClient networkClient;
     private Graph graph;
     private Vertex[][] vertexArray;
-    private Vertex[] botDestinations;
     private Map<Integer, List<Vertex>> botPaths;
     private Queue<Vertex> bestLocations;
 
-    /*public MyClient(String hostname, String teamName) {
+    public MyClient(String hostname, String teamName) {
         this.hostName = hostname;
         this.teamName = teamName;
-    }*/
-
-    public MyClient() {
-        call();
     }
 
-    //@Override
+
+    @Override
     public Void call() {
-        //networkClient = new NetworkClient(hostName, teamName);
-        networkClient = new NetworkClient(hostName, "Lyserg25");
+        networkClient = new NetworkClient(hostName, teamName);
         myPlayerNr = networkClient.getMyPlayerNumber();
         botPositions = new Position[3][3];
         botVertices = new Vertex[3][3];
-        botDestinations = new Vertex[3];
         botPaths = new HashMap<>();
         bestLocations = new PriorityQueue<>(new VertexComparator());
-
         vertexArray = initVertexArray();
         graph = initGraph(vertexArray);
-
-        //networkClient.setMoveDirection(2, 1, 0);
-
-//        int rgb = networkClient.getBoard(x, y); // 0-1023 ->
-//        int b = rgb & 255;
-//        int g = (rgb >> 8) & 255;
-//        int r = (rgb >> 16) & 255;
-//
-//        networkClient.getInfluenceRadiusForBot(0); // -> 40
-//
-//        networkClient.getScore(0); // Punkte von rot
-//
-//        networkClient.isWalkable(x, y); // begehbar oder Hinderniss?
-//
-//        networkClient.setMoveDirection(0, 1, 0); // bot 0 nach rechts
-//        networkClient.setMoveDirection(1, 0.23f, -0.52f); // bot 1 nach rechts unten
-//
-
         Random random = new Random();
         ColorChange colorChange;
 
@@ -73,7 +49,7 @@ public class MyClient { //} implements Callable<Void> {
             networkClient.setMoveDirection(0, random.nextFloat() * 2 - 1, random.nextFloat() * 2 - 1);
             networkClient.setMoveDirection(1, random.nextFloat() * 2 - 1, random.nextFloat() * 2 - 1);
             networkClient.setMoveDirection(2, random.nextFloat() * 2 - 1, random.nextFloat() * 2 - 1);
-            if ((colorChange = networkClient.pullNextColorChange()) != null) { //firstColorChange = true;
+            if ((colorChange = networkClient.pullNextColorChange()) != null) {
                 setBotPosition(colorChange);
             }
         }
@@ -81,41 +57,21 @@ public class MyClient { //} implements Callable<Void> {
         Timer botDestinationTimer = new Timer();
         botDestinationTimer.schedule(new CalcBotDestinations(), 0, 1000);
 
-
-        /*Thread t = new Thread(new calcBotDestinations(networkClient));
-        t.start();*/
-
-
-//        Timer slowDownTimer = new Timer();
-//        slowDownTimer.schedule(new TimerTask() {
-//            @Override
-//            public void run() {
-//                networkClient.setMoveDirection(0, 0, 0);
-//                networkClient.setMoveDirection(1, 0, 0);
-//            }
-//        }, 5, 5);
-
         while (true) {
 
             for (int botNr = 0; botNr < 3; botNr++) {
                 if (botVertices[myPlayerNr][botNr] == null || bestLocations.isEmpty()) {
                     networkClient.setMoveDirection(botNr, random.nextFloat() * 2 - 1, random.nextFloat() * 2 - 1);
                 } else {
-                    //TODO refactor this ->
                     if (botPaths.get(botNr) == null) {
-                        /*Vertex v = getNextDestination(botNr);
-                        botPaths.put(botNr, getPathToVertex(botNr, v));*/
                         botPaths.put(botNr, getPathToVertex(botNr, bestLocations.poll()));
                     } else if (isAtVertex(botNr, botPaths.get(botNr).get(0))) {
                         botPaths.get(botNr).remove(0);
                         if (botPaths.get(botNr).isEmpty()) {
-                            /*Vertex v = getNextDestination(botNr);
-                            botPaths.put(botNr, getPathToVertex(botNr, v));*/
                             botPaths.put(botNr, getPathToVertex(botNr, bestLocations.poll()));
-                            System.out.println("bot " + botNr + " new location");
                         }
                         moveToVertex(botNr, botPaths.get(botNr).get(0));
-                    } else  {
+                    } else {
                         Position botPos = botPositions[myPlayerNr][botNr];
                         if (vertexArray[botPos.x / BLOCK_SIZE][botPos.y / BLOCK_SIZE] == null) {
                             networkClient.setMoveDirection(botNr, random.nextFloat() * 2 - 1, random.nextFloat() * 2 - 1);
@@ -125,28 +81,16 @@ public class MyClient { //} implements Callable<Void> {
                     }
                 }
             }
-
             while ((colorChange = networkClient.pullNextColorChange()) != null) {
                 setBotPosition(colorChange);
             }
         }
     }
 
-    private Vertex getNextDestination(int botNr) {
-        for (int x = 20; x < 40; x++) {
-            if (vertexArray[x][15] != null) return vertexArray[x][15];
-        }
-        for (int x = 20; x < 40; x++) {
-            if (vertexArray[x][30] != null) return vertexArray[x][30];
-        }
-        return vertexArray[25][40];
-    }
-
     private boolean isAtVertex(int botNr, Vertex v) {
         if (v == null) {
             return false;
         }
-
         Vertex botVertex = botVertices[myPlayerNr][botNr];
         if (botVertex.equals(v)) {
             return true;
@@ -156,7 +100,7 @@ public class MyClient { //} implements Callable<Void> {
         }
         if (botNr == 0) {
             Set<Vertex> neighboursNeighbours = new HashSet<>();
-            for (Object vertex : graph.getNeighbours(v).keySet()) {
+            for (Vertex vertex : graph.getNeighbours(v).keySet()) {
                 neighboursNeighbours.addAll(graph.getNeighbours(vertex).keySet());
             }
             if (neighboursNeighbours.contains(botVertex)) {
@@ -177,7 +121,6 @@ public class MyClient { //} implements Callable<Void> {
         if (path == null || path.size() < 3) {
             return path;
         }
-
         List<Vertex> shortenedPath = new ArrayList<>();
         Vertex lastAdded = path.get(0);
         shortenedPath.add(lastAdded);
@@ -190,7 +133,6 @@ public class MyClient { //} implements Callable<Void> {
             }
         }
         shortenedPath.add(path.get(path.size() - 1));
-
         return shortenedPath;
     }
 
@@ -199,16 +141,6 @@ public class MyClient { //} implements Callable<Void> {
         float x = getMovementValue(v.x, botVertex.x);
         float y = getMovementValue(v.y, botVertex.y);
         networkClient.setMoveDirection(botNr, x, y);
-
-//        if (botNr == 0) {
-//            Timer slowDownTimer = new Timer();
-//            slowDownTimer.schedule(new TimerTask() {
-//                @Override
-//                public void run() {
-//                    networkClient.setMoveDirection(0, 0, 0);
-//                }
-//            }, 4);
-//        }
     }
 
     private float getMovementValue(int value1, int value2) {
@@ -233,7 +165,6 @@ public class MyClient { //} implements Callable<Void> {
                 }
             }
         }
-
         return graph;
     }
 
@@ -250,7 +181,6 @@ public class MyClient { //} implements Callable<Void> {
             if (yTo >= FIELD_SIZE) {
                 yTo = FIELD_SIZE - 1;
             }
-
             for (xFrom = 0; xFrom < FIELD_SIZE; xFrom = xTo + 1, x++) {
                 xTo = xFrom + BLOCK_SIZE - 1;
 
@@ -308,41 +238,23 @@ public class MyClient { //} implements Callable<Void> {
         }
     }
 
-//    private class calcBotDestinations implements Runnable {
-//
-//        private NetworkClient networkClient;
-//
-//        public calcBotDestinations(NetworkClient networkClient) {
-//            this.networkClient = networkClient;
-//        }
-//
-//        public void run() {
-//            ColorChange colorChange;
-//            while (true) {
-//                while ((colorChange = networkClient.pullNextColorChange()) != null) {
-//                    botPositions[colorChange.player][colorChange.bot] = new Position(colorChange.x, colorChange.y);
-//                }
-//            }
-//        }
-//    }
-
     private class CalcBotDestinations extends TimerTask {
 
         private List<Vertex> enemyVertices;
-        private List<Vertex> enemyNeighbourVertices;
-        private List<Vertex> enemyNeighbourNeighbourVertices;
+        private List<Vertex> enemyFirstDegreeNeighbourVertices;
+        private List<Vertex> enemySecondDegreeNeighbourVertices;
+        private List<Vertex> enemyThirdDegreeNeighbourVertices;
 
         @Override
         public void run() {
-            long start = System.currentTimeMillis();
-
+            //long start = System.currentTimeMillis();
             setVertexColors();
             getEnemyVertices();
             setVertexScores();
+            graph.recalculateWeights();
             setBestLocations();
-
-            System.out.println(System.currentTimeMillis() - start);
-            System.out.println("x=" + bestLocations.peek().x + " y=" + bestLocations.peek().y);
+            //System.out.println(System.currentTimeMillis() - start);
+            //System.out.println("x=" + bestLocations.peek().x + " y=" + bestLocations.peek().y);
         }
 
         private void setVertexScores() {
@@ -353,7 +265,7 @@ public class MyClient { //} implements Callable<Void> {
                     v = vertexArray[x][y];
                     if (v == null) {
                     } else if (enemyVertices.contains(v)) {
-                        v.setScore(10);
+                        v.setScore(50);
                     } else {
                         double colorSum = v.getRed() + v.getGreen() + v.getBlue();
                         if (myPlayerNr == 0) {
@@ -363,20 +275,23 @@ public class MyClient { //} implements Callable<Void> {
                         } else {
                             score = 1 - v.getBlue() / colorSum;
                         }
-                        for (Vertex enemyNeighbourVertex : enemyNeighbourVertices) {
+                        for (Vertex enemyNeighbourVertex : enemyFirstDegreeNeighbourVertices) {
                             if (v.equals(enemyNeighbourVertex)) {
+                                score = score * 0.25;
+                            }
+                        }
+                        for (Vertex enemyNeighbourNeighbourVertex : enemySecondDegreeNeighbourVertices) {
+                            if (v.equals(enemyNeighbourNeighbourVertex)) {
                                 score = score * 0.5;
                             }
                         }
-                        for (Vertex enemyNeighbourNeighbourVertex : enemyNeighbourNeighbourVertices) {
+                        for (Vertex enemyNeighbourNeighbourVertex : enemyThirdDegreeNeighbourVertices) {
                             if (v.equals(enemyNeighbourNeighbourVertex)) {
                                 score = score * 0.75;
                             }
                         }
-                        score = (1 - score) * 10;
+                        score = (1 - score) * 50;
                         v.setScore(score);
-
-                        //System.out.println("y=" + v.x + " x =" + v.y + " score=" + score);
                     }
                 }
             }
@@ -399,14 +314,12 @@ public class MyClient { //} implements Callable<Void> {
                 if (yTo >= FIELD_SIZE) {
                     yTo = FIELD_SIZE - 1;
                 }
-
                 for (xFrom = 0; xFrom < FIELD_SIZE; xFrom = xTo + 1, x++) {
                     xTo = xFrom + BLOCK_SIZE - 1;
 
                     if (xTo >= FIELD_SIZE) {
                         xTo = FIELD_SIZE - 1;
                     }
-
                     if (vertexArray[x][y] != null) {
                         setVertexColorSums(vertexArray[x][y], xFrom, yFrom, xTo, yTo);
                     }
@@ -435,18 +348,28 @@ public class MyClient { //} implements Callable<Void> {
 
         private void getEnemyVertices() {
             enemyVertices = new ArrayList<>();
-            enemyNeighbourVertices = new ArrayList<>();
-            enemyNeighbourNeighbourVertices = new ArrayList<>();
+            enemyFirstDegreeNeighbourVertices = new ArrayList<>();
+            enemySecondDegreeNeighbourVertices = new ArrayList<>();
+            enemyThirdDegreeNeighbourVertices = new ArrayList<>();
             for (int j = 0; j < 3; j++) {
                 for (int i = 0; i < 3; i++) {
                     if (j != myPlayerNr && botVertices[j][i] != null) {
                         Vertex v = botVertices[j][i];
                         enemyVertices.add(v);
-                        enemyNeighbourVertices.addAll(graph.getNeighbours(v).keySet());
+                        enemyFirstDegreeNeighbourVertices.addAll(graph.getNeighbours(v).keySet());
 
-                        for (Object vertex : graph.getNeighbours(v).keySet()) {
-                            enemyNeighbourNeighbourVertices.addAll(graph.getNeighbours(vertex).keySet());
+                        for (Vertex vertex : enemyFirstDegreeNeighbourVertices) {
+                            enemySecondDegreeNeighbourVertices.addAll(graph.getNeighbours(vertex).keySet());
                         }
+                        enemySecondDegreeNeighbourVertices.removeAll(enemyVertices);
+                        enemySecondDegreeNeighbourVertices.removeAll(enemyFirstDegreeNeighbourVertices);
+
+                        for (Vertex vertex : enemySecondDegreeNeighbourVertices) {
+                            enemyThirdDegreeNeighbourVertices.addAll(graph.getNeighbours(vertex).keySet());
+                        }
+                        enemyThirdDegreeNeighbourVertices.removeAll(enemyVertices);
+                        enemyThirdDegreeNeighbourVertices.removeAll(enemyFirstDegreeNeighbourVertices);
+                        enemyThirdDegreeNeighbourVertices.removeAll(enemySecondDegreeNeighbourVertices);
                     }
                 }
             }

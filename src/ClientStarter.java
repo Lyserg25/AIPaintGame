@@ -17,12 +17,13 @@ public class ClientStarter {
      * java -jar kipifub.jar
      */
     public static void main(String[] args) {
-        new MyClient();
+        //MyClient myClient = new MyClient(HOST_NAME, TEAM_NAME[0]);
+        //myClient.call();
         List<Callable<Void>> clients = new ArrayList<>();
         ExecutorService executor = Executors.newFixedThreadPool(3);
         //clients.add(new MyClient(HOST_NAME, TEAM_NAME[0]));
-        for (int i = 1; i < 3; i++) {
-            //clients.add(new MyClientNoMove(HOST_NAME, TEAM_NAME[i]));
+        for (int i = 0; i < 3; i++) {
+            clients.add(new MyClient(HOST_NAME, TEAM_NAME[i]));
         }
         try {
             executor.invokeAll(clients);

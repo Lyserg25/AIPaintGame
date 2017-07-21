@@ -3,8 +3,8 @@ import java.util.*;
 /**
  * Created by Maximilian on 11.07.2017.
  */
-public class Graph<Vertex> {
-    private Map<Vertex, Map<Vertex, Double>>  graph;
+public class Graph {
+    private Map<Vertex, Map<Vertex, Double>> graph;
     private Set<Vertex> vertices;
     private static final Double DEFAULT_WEIGHT = 1.0;
 
@@ -29,6 +29,16 @@ public class Graph<Vertex> {
         addVertex(v2);
         graph.get(v1).put(v2, weight);
         graph.get(v2).put(v1, weight);
+    }
+
+    public void recalculateWeights() {
+        double weight;
+        for (Vertex v1 : graph.keySet()) {
+            for (Vertex v2 : graph.get(v1).keySet()) {
+                weight = DEFAULT_WEIGHT + (v1.getScore() * v2.getScore()) / 2.0;
+                graph.get(v1).put(v2, weight);
+            }
+        }
     }
 
     public Double getWeight(Vertex v1, Vertex v2) {

@@ -8,30 +8,13 @@ import java.util.concurrent.Callable;
 /**
  * Created by Maximilian on 04.07.2017.
  */
-/*public class MyClientNoMove implements Callable<Void> {
+public class MyClientRandomMove {
 
     private String hostName;
     private String teamName;
     protected int myPlayerNr;
 
-    public MyClientNoMove(String hostname, String teamName) {
-        this.hostName = hostname;
-        this.teamName = teamName;
-    }
-    @Override
-    public Void call() {
-        NetworkClient networkClient = new NetworkClient(hostName, teamName);
-        return null;
-    }
-}*/
-
-public class MyClientNoMove {
-
-    private String hostName;
-    private String teamName;
-    protected int myPlayerNr;
-
-    public MyClientNoMove(String hostname, String teamName) {
+    public MyClientRandomMove(String hostname, String teamName) {
         NetworkClient networkClient = new NetworkClient(hostname, teamName);
         Random random = new Random();
         for (; ; ) {

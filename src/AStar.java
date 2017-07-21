@@ -4,7 +4,7 @@ import java.util.*;
  * Created by Maximilian on 15.07.2017.
  */
 public class AStar {
-    private Graph<Vertex> graph;
+    private Graph graph;
     private Queue<Vertex> openList;
     private Set<Vertex> closedList;
     private Map<Vertex, Vertex> predecessors;
@@ -12,9 +12,10 @@ public class AStar {
     private Map<Vertex, Double> gScore;
     private Vertex destination;
 
-    public AStar() {}
+    public AStar() {
+    }
 
-    public List<Vertex> getShortestPath(Graph<Vertex> graph, Vertex start, Vertex end) {
+    public List<Vertex> getShortestPath(Graph graph, Vertex start, Vertex end) {
         initAStar(graph, start, end);
         Vertex currentVertex;
 
@@ -30,8 +31,7 @@ public class AStar {
         return null;
     }
 
-    private void initAStar(Graph<Vertex> graph, Vertex start, Vertex destination) {
-        //TODO: refactoring
+    private void initAStar(Graph graph, Vertex start, Vertex destination) {
         this.graph = graph;
         this.destination = destination;
         this.openList = new PriorityQueue<>(new FScoreComparator());
