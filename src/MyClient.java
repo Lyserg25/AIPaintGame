@@ -323,7 +323,6 @@ public class MyClient { //} implements Callable<Void> {
 
     private class CalcBotDestinations extends TimerTask {
 
-        private int[][] vertexColorField;
         private List<Vertex> enemyVertices;
         private List<Vertex> enemyNeighbourVertices;
         private List<Vertex> enemyNeighbourNeighbourVertices;
@@ -331,19 +330,10 @@ public class MyClient { //} implements Callable<Void> {
         @Override
         public void run() {
             long start = System.currentTimeMillis();
-//            int[][] field = new int[FIELD_SIZE][FIELD_SIZE];
-//
-//            for (int y = 0; y < FIELD_SIZE; y++) {
-//                for (int x = 0; x < FIELD_SIZE; x++) {
-//                    field[x][y] = networkClient.getBoard(x, y);
-//                }
-//            }
-            //QuadTreeNode quadTree = new QuadTreeNode(field, 0, 0, FIELD_SIZE, FIELD_SIZE);
 
             setVertexColors();
             getEnemyVertices();
             setVertexScores();
-            //QuadTreeNode quadTree = new QuadTreeNode(vertexColorField, 0, 0, vertexColorField.length, vertexColorField.length);
             getBestLocations();
 
             System.out.println(System.currentTimeMillis() - start);
@@ -359,12 +349,13 @@ public class MyClient { //} implements Callable<Void> {
                     } else if (enemyVertices.contains(v)) {
                         v.setScore(10);
                     } else {
+                        double colorSum = v.getRed() + v.getGreen() + v.getBlue();
                         if (myPlayerNr == 0) {
-                            score = 1 - v.getAverageColor().getRed() / 765.0;       //percentage enemy color
+                            score = 1 - v.getRed() / colorSum;
                         } else if (myPlayerNr == 1) {
-                            score = 1 - v.getAverageColor().getGreen() / 765.0;
+                            score = 1 - v.getGreen() / colorSum;
                         } else {
-                            score = 1 - v.getAverageColor().getBlue() / 765.0;
+                            score = 1 - v.getBlue() / colorSum;
                         }
                         for (Vertex enemyNeighbourVertex : enemyNeighbourVertices) {
                             if (v.equals(enemyNeighbourVertex)) {
@@ -379,7 +370,7 @@ public class MyClient { //} implements Callable<Void> {
                         score = (1 - score) * 10;
                         v.setScore(score);
 
-                        //System.out.println("y=" + v.x + " x =" + v.y + " score=" + score);
+                        System.out.println("y=" + v.x + " x =" + v.y + " score=" + score);
                     }
                 }
             }
@@ -392,8 +383,6 @@ public class MyClient { //} implements Callable<Void> {
         }
 
         private void setVertexColors() {
-            vertexColorField = new int[FIELD_SIZE / BLOCK_SIZE][FIELD_SIZE / BLOCK_SIZE];
-            Color averageColor;
             int xFrom, yFrom, xTo, yTo;
             int x = 0;
             int y = 0;
@@ -412,20 +401,14 @@ public class MyClient { //} implements Callable<Void> {
                         xTo = FIELD_SIZE - 1;
                     }
 
-                    if (vertexArray[x][y] == null) {
-                        averageColor = Color.BLACK;
-                    } else {
-                        averageColor = getAverageColor(xFrom, yFrom, xTo, yTo);
-                        vertexArray[x][y].setAverageColor(averageColor);
+                    if (vertexArray[x][y] != null) {
+                        setVertexColorSums(vertexArray[x][y], xFrom, yFrom, xTo, yTo);
                     }
-
-                    //noch nötig??
-                    vertexColorField[x][y] = averageColor.getRGB();
                 }
             }
         }
 
-        private Color getAverageColor(int xFrom, int yFrom, int xTo, int yTo) {
+        private void setVertexColorSums(Vertex v, int xFrom, int yFrom, int xTo, int yTo) {
             int red = 0;
             int green = 0;
             int blue = 0;
@@ -438,7 +421,10 @@ public class MyClient { //} implements Callable<Void> {
                 }
             }
             int size = BLOCK_SIZE * BLOCK_SIZE;
-            return new Color(red / size, green / size, blue / size);
+            v.setRed(red);
+            v.setGreen(green);
+            v.setBlue(blue);
+            v.setAverageColor(new Color(red / size, green / size, blue / size));
         }
 
         private void getEnemyVertices() {

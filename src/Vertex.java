@@ -7,7 +7,34 @@ public class Vertex {
     public int x;
     public int y;
     private Color averageColor;
+    private int red;
+    private int green;
+    private int blue;
     private double score;
+
+    public int getRed() {
+        return red;
+    }
+
+    public int getGreen() {
+        return green;
+    }
+
+    public int getBlue() {
+        return blue;
+    }
+
+    public void setRed(int red) {
+        this.red = red;
+    }
+
+    public void setGreen(int green) {
+        this.green = green;
+    }
+
+    public void setBlue(int blue) {
+        this.blue = blue;
+    }
 
     public Vertex(int x, int y) {
         this.x = x;
