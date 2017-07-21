@@ -4,6 +4,7 @@ import lenz.htw.kipifub.net.NetworkClient;
 import java.awt.*;
 import java.util.*;
 import java.util.List;
+import java.util.concurrent.SynchronousQueue;
 
 
 /**
@@ -23,6 +24,7 @@ public class MyClient { //} implements Callable<Void> {
     private Vertex[][] vertexArray;
     private Vertex[] botDestinations;
     private Map<Integer, List<Vertex>> botPaths;
+    private Queue<Vertex> bestLocations;
 
     /*public MyClient(String hostname, String teamName) {
         this.hostName = hostname;
@@ -42,6 +44,7 @@ public class MyClient { //} implements Callable<Void> {
         botVertices = new Vertex[3][3];
         botDestinations = new Vertex[3];
         botPaths = new HashMap<>();
+        bestLocations = new PriorityQueue<>(new VertexComparator());
 
         vertexArray = initVertexArray();
         graph = initGraph(vertexArray);
@@ -76,7 +79,7 @@ public class MyClient { //} implements Callable<Void> {
         }
 
         Timer botDestinationTimer = new Timer();
-        botDestinationTimer.schedule(new CalcBotDestinations(), 2000, 2000);
+        botDestinationTimer.schedule(new CalcBotDestinations(), 0, 1000);
 
 
         /*Thread t = new Thread(new calcBotDestinations(networkClient));
@@ -95,22 +98,24 @@ public class MyClient { //} implements Callable<Void> {
         while (true) {
 
             for (int botNr = 0; botNr < 3; botNr++) {
-                if (botVertices[myPlayerNr][botNr] == null) {
+                if (botVertices[myPlayerNr][botNr] == null || bestLocations.isEmpty()) {
                     networkClient.setMoveDirection(botNr, random.nextFloat() * 2 - 1, random.nextFloat() * 2 - 1);
                 } else {
                     //TODO refactor this ->
-                    if (botPaths.get(botNr) == null || isAtVertex(botNr, botDestinations[botNr])) {
-                        Vertex v = getNextDestination(botNr);
-                        botPaths.put(botNr, getPathToVertex(botNr, v));
-                    }
-                    if (botPaths.get(botNr) != null && isAtVertex(botNr, botPaths.get(botNr).get(0))) {
+                    if (botPaths.get(botNr) == null) {
+                        /*Vertex v = getNextDestination(botNr);
+                        botPaths.put(botNr, getPathToVertex(botNr, v));*/
+                        botPaths.put(botNr, getPathToVertex(botNr, bestLocations.poll()));
+                    } else if (isAtVertex(botNr, botPaths.get(botNr).get(0))) {
                         botPaths.get(botNr).remove(0);
                         if (botPaths.get(botNr).isEmpty()) {
-                            Vertex v = getNextDestination(botNr);
-                            botPaths.put(botNr, getPathToVertex(botNr, v));
+                            /*Vertex v = getNextDestination(botNr);
+                            botPaths.put(botNr, getPathToVertex(botNr, v));*/
+                            botPaths.put(botNr, getPathToVertex(botNr, bestLocations.poll()));
+                            System.out.println("bot " + botNr + " new location");
                         }
                         moveToVertex(botNr, botPaths.get(botNr).get(0));
-                    } else if (botPaths.get(botNr) != null && !isAtVertex(botNr, botPaths.get(botNr).get(0))) {
+                    } else  {
                         Position botPos = botPositions[myPlayerNr][botNr];
                         if (vertexArray[botPos.x / BLOCK_SIZE][botPos.y / BLOCK_SIZE] == null) {
                             networkClient.setMoveDirection(botNr, random.nextFloat() * 2 - 1, random.nextFloat() * 2 - 1);
@@ -334,9 +339,10 @@ public class MyClient { //} implements Callable<Void> {
             setVertexColors();
             getEnemyVertices();
             setVertexScores();
-            getBestLocations();
+            setBestLocations();
 
             System.out.println(System.currentTimeMillis() - start);
+            System.out.println("x=" + bestLocations.peek().x + " y=" + bestLocations.peek().y);
         }
 
         private void setVertexScores() {
@@ -370,16 +376,16 @@ public class MyClient { //} implements Callable<Void> {
                         score = (1 - score) * 10;
                         v.setScore(score);
 
-                        System.out.println("y=" + v.x + " x =" + v.y + " score=" + score);
+                        //System.out.println("y=" + v.x + " x =" + v.y + " score=" + score);
                     }
                 }
             }
         }
 
-        private List<Vertex> getBestLocations() {
-            List<Vertex> vertices = graph.getVertices();
-            Collections.sort(vertices, new VertexComparator());
-            return vertices;
+        private void setBestLocations() {
+            Queue<Vertex> verticesSorted = new PriorityQueue<>(new VertexComparator());
+            verticesSorted.addAll(graph.getVertices());
+            bestLocations = verticesSorted;
         }
 
         private void setVertexColors() {

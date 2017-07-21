@@ -55,7 +55,7 @@ public class MyClientNoMove {
         }
 
 
-        /*for (; ; ) {
+        for (; ; ) {
             networkClient.setMoveDirection(0, random.nextFloat() * 2 - 1, random.nextFloat() * 2 - 1);
             networkClient.setMoveDirection(1, random.nextFloat() * 2 - 1, random.nextFloat() * 2 - 1);
             networkClient.setMoveDirection(2, random.nextFloat() * 2 - 1, random.nextFloat() * 2 - 1);
@@ -63,6 +63,6 @@ public class MyClientNoMove {
                 System.out.println("colorchange");
 
             }
-        }*/
+        }
     }
 }
